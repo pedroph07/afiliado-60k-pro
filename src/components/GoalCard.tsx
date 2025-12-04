@@ -21,13 +21,13 @@ export function GoalCard({ currentTotal, goal }: GoalCardProps) {
 
   return (
     <div className="bg-gradient-card rounded-2xl p-6 md:p-8 border border-border/50 shadow-card">
-      <div className="flex flex-col lg:flex-row items-center gap-8">
+      <div className="flex flex-col items-center gap-6 text-center">
         <div className="flex-shrink-0">
           <ProgressRing progress={progress} size={180} />
         </div>
         
-        <div className="flex-1 text-center lg:text-left space-y-4">
-          <div className="flex items-center justify-center lg:justify-start gap-2">
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-2">
             <Target className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-muted-foreground">Meta Global</h2>
           </div>
@@ -41,7 +41,7 @@ export function GoalCard({ currentTotal, goal }: GoalCardProps) {
             </p>
           </div>
 
-          <div className="flex items-center justify-center lg:justify-start gap-2 pt-2">
+          <div className="flex items-center justify-center gap-2 pt-2">
             <TrendingUp className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">
               Faltam <span className="text-primary font-semibold">{formatCurrency(remaining)}</span> para bater a meta
