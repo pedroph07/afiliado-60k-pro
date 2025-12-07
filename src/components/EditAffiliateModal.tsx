@@ -15,7 +15,7 @@ interface EditAffiliateModalProps {
   open: boolean;
   affiliate: Affiliate | null;
   onClose: () => void;
-  onSave: (id: string, updates: { name?: string; totalSales?: number }) => void;
+  onSave: (id: string, updates: { name?: string; total_sales?: number }) => void;
 }
 
 export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAffiliateModalProps) {
@@ -25,7 +25,7 @@ export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAff
   useEffect(() => {
     if (affiliate) {
       setName(affiliate.name);
-      setTotalSales(affiliate.totalSales.toString());
+      setTotalSales(String(affiliate.total_sales));
     }
   }, [affiliate]);
 
@@ -34,7 +34,7 @@ export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAff
     if (affiliate && name.trim()) {
       onSave(affiliate.id, {
         name: name.trim(),
-        totalSales: parseFloat(totalSales) || 0,
+        total_sales: parseFloat(totalSales) || 0,
       });
       onClose();
     }

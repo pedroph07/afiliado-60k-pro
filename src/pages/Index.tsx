@@ -1,32 +1,36 @@
 import { useState } from 'react';
-import { useAffiliates } from '@/hooks/useAffiliates';
+import { useAffiliates, Affiliate } from '@/hooks/useAffiliates';
+import { useAuth } from '@/contexts/AuthContext';
 import { GoalCard } from '@/components/GoalCard';
 import { TopThreeCard } from '@/components/TopThreeCard';
 import { AffiliateRow } from '@/components/AffiliateRow';
 import { AddAffiliateModal } from '@/components/AddAffiliateModal';
 import { AddSaleModal } from '@/components/AddSaleModal';
 import { EditAffiliateModal } from '@/components/EditAffiliateModal';
+import { EditGoalModal } from '@/components/EditGoalModal';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Trophy, Users } from 'lucide-react';
-import { Affiliate } from '@/types/affiliate';
+import { UserPlus, Trophy, Users, LogOut, Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const GOAL = 60000;
-
 const Index = () => {
-  const { affiliates, totalSales, addAffiliate, updateAffiliateSales, removeAffiliate, editAffiliate } = useAffiliates();
+  const { affiliates, totalSales, goal, loading, addAffiliate, updateAffiliateSales, removeAffiliate, editAffiliate, updateGoal } = useAffiliates();
+  const { user, isAdmin, signOut } = useAuth();
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
 
   const topThree = affiliates.slice(0, 3);
-  const others = affiliates.slice(3);
 
-  const handleAddAffiliate = (name: string, initialSales: number) => {
-    addAffiliate(name, initialSales);
-    toast.success(`${name} adicionado com sucesso!`);
+  const handleAddAffiliate = async (name: string, initialSales: number) => {
+    try {
+      await addAffiliate(name, initialSales);
+      toast.success(`${name} adicionado com sucesso!`);
+    } catch (error) {
+      toast.error('Erro ao adicionar afiliado');
+    }
   };
 
   const handleAddSale = (id: string) => {
@@ -37,10 +41,14 @@ const Index = () => {
     }
   };
 
-  const handleSaleSubmit = (amount: number) => {
+  const handleSaleSubmit = async (amount: number) => {
     if (selectedAffiliate) {
-      updateAffiliateSales(selectedAffiliate.id, amount);
-      toast.success(`Venda de R$ ${amount.toLocaleString('pt-BR')} registrada!`);
+      try {
+        await updateAffiliateSales(selectedAffiliate.id, amount);
+        toast.success(`Venda de R$ ${amount.toLocaleString('pt-BR')} registrada!`);
+      } catch (error) {
+        toast.error('Erro ao registrar venda');
+      }
     }
   };
 
@@ -49,38 +57,93 @@ const Index = () => {
     setShowEditModal(true);
   };
 
-  const handleEditSave = (id: string, updates: { name?: string; totalSales?: number }) => {
-    editAffiliate(id, updates);
-    toast.success('Afiliado atualizado!');
-  };
-
-  const handleDelete = (id: string) => {
-    const affiliate = affiliates.find(a => a.id === id);
-    if (affiliate) {
-      removeAffiliate(id);
-      toast.success(`${affiliate.name} removido`);
+  const handleEditSave = async (id: string, updates: { name?: string; total_sales?: number }) => {
+    try {
+      await editAffiliate(id, updates);
+      toast.success('Afiliado atualizado!');
+    } catch (error) {
+      toast.error('Erro ao atualizar afiliado');
     }
   };
+
+  const handleDelete = async (id: string) => {
+    const affiliate = affiliates.find(a => a.id === id);
+    if (affiliate) {
+      try {
+        await removeAffiliate(id);
+        toast.success(`${affiliate.name} removido`);
+      } catch (error) {
+        toast.error('Erro ao remover afiliado');
+      }
+    }
+  };
+
+  const handleGoalSave = async (newGoal: number) => {
+    try {
+      await updateGoal(newGoal);
+      toast.success('Meta atualizada!');
+    } catch (error) {
+      toast.error('Erro ao atualizar meta');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('Até logo!');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero">
       <div className="container max-w-6xl py-8 px-4 md:py-12">
         {/* Header */}
         <header className="text-center mb-10 animate-slide-up">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Trophy className="w-10 h-10 text-accent glow-gold" />
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              Ranking de Afiliados
-            </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1" />
+            <div className="flex items-center gap-3">
+              <Trophy className="w-10 h-10 text-accent glow-gold" />
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                Ranking de Afiliados
+              </h1>
+            </div>
+            <div className="flex-1 flex justify-end gap-2">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowGoalModal(true)}
+                  title="Editar Meta"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="outline" size="icon" onClick={handleSignOut} title="Sair">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Acompanhe o desempenho dos seus afiliados e veja quem está mais perto de conquistar os prêmios!
+            {isAdmin 
+              ? 'Gerencie seus afiliados e acompanhe o progresso das vendas!'
+              : 'Acompanhe o desempenho dos afiliados e veja quem está mais perto de conquistar os prêmios!'}
           </p>
+          {!isAdmin && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Logado como: {user?.email}
+            </p>
+          )}
         </header>
 
         {/* Goal Progress */}
         <section className="mb-10 animate-scale-in">
-          <GoalCard currentTotal={totalSales} goal={GOAL} />
+          <GoalCard currentTotal={totalSales} goal={goal} />
         </section>
 
         {/* Top 3 */}
@@ -119,10 +182,12 @@ const Index = () => {
                 Todos os Afiliados ({affiliates.length})
               </h2>
             </div>
-            <Button onClick={() => setShowAddModal(true)}>
-              <UserPlus className="w-4 h-4" />
-              Adicionar
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setShowAddModal(true)}>
+                <UserPlus className="w-4 h-4" />
+                Adicionar
+              </Button>
+            )}
           </div>
 
           {affiliates.length === 0 ? (
@@ -132,12 +197,16 @@ const Index = () => {
                 Nenhum afiliado cadastrado
               </h3>
               <p className="text-muted-foreground mb-6">
-                Adicione seus afiliados para começar a rastrear as vendas
+                {isAdmin 
+                  ? 'Adicione seus afiliados para começar a rastrear as vendas'
+                  : 'Aguarde o administrador adicionar os afiliados'}
               </p>
-              <Button onClick={() => setShowAddModal(true)}>
-                <UserPlus className="w-4 h-4" />
-                Adicionar Primeiro Afiliado
-              </Button>
+              {isAdmin && (
+                <Button onClick={() => setShowAddModal(true)}>
+                  <UserPlus className="w-4 h-4" />
+                  Adicionar Primeiro Afiliado
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -146,9 +215,9 @@ const Index = () => {
                   key={affiliate.id}
                   affiliate={affiliate}
                   position={index + 1}
-                  onAddSale={handleAddSale}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onAddSale={isAdmin ? handleAddSale : undefined}
+                  onEdit={isAdmin ? handleEdit : undefined}
+                  onDelete={isAdmin ? handleDelete : undefined}
                 />
               ))}
             </div>
@@ -180,6 +249,13 @@ const Index = () => {
             setSelectedAffiliate(null);
           }}
           onSave={handleEditSave}
+        />
+
+        <EditGoalModal
+          open={showGoalModal}
+          currentGoal={goal}
+          onClose={() => setShowGoalModal(false)}
+          onSave={handleGoalSave}
         />
       </div>
     </div>

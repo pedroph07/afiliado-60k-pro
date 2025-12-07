@@ -73,11 +73,11 @@ export function TopThreeCard({ affiliate, position }: TopThreeCardProps) {
           <h3 className={cn('text-xl font-bold', benefit.textGradient)}>
             {affiliate.name}
           </h3>
-          <p className="text-2xl font-bold text-foreground mt-1">
-            {formatCurrency(affiliate.totalSales)}
+        <p className="text-2xl font-bold text-foreground mt-1">
+            {formatCurrency(Number(affiliate.total_sales))}
           </p>
           <p className="text-sm text-muted-foreground">
-            {affiliate.salesCount} {affiliate.salesCount === 1 ? 'venda' : 'vendas'}
+            {affiliate.sales_count} {affiliate.sales_count === 1 ? 'venda' : 'vendas'}
           </p>
         </div>
 

@@ -1,88 +1,174 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Affiliate } from '@/types/affiliate';
 
-const STORAGE_KEY = 'affiliates-data';
-
-const loadFromStorage = (): Affiliate[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      const parsed = JSON.parse(data);
-      return parsed.map((a: Affiliate) => ({
-        ...a,
-        createdAt: new Date(a.createdAt),
-      }));
-    }
-  } catch (e) {
-    console.error('Error loading affiliates:', e);
-  }
-  return [];
-};
-
-const saveToStorage = (affiliates: Affiliate[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(affiliates));
-};
+export type { Affiliate };
 
 export function useAffiliates() {
-  const [affiliates, setAffiliates] = useState<Affiliate[]>(loadFromStorage);
+  const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [goal, setGoal] = useState(60000);
 
-  const addAffiliate = useCallback((name: string, initialSales: number = 0) => {
-    const newAffiliate: Affiliate = {
-      id: crypto.randomUUID(),
-      name,
-      totalSales: initialSales,
-      salesCount: initialSales > 0 ? 1 : 0,
-      createdAt: new Date(),
+  const fetchAffiliates = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('affiliates')
+      .select('*')
+      .order('total_sales', { ascending: false });
+
+    if (!error && data) {
+      setAffiliates(data);
+    }
+    setLoading(false);
+  }, []);
+
+  const fetchGoal = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'goal')
+      .maybeSingle();
+
+    if (!error && data) {
+      setGoal(Number(data.value));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAffiliates();
+    fetchGoal();
+
+    // Subscribe to realtime updates
+    const affiliatesChannel = supabase
+      .channel('affiliates-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'affiliates'
+        },
+        () => {
+          fetchAffiliates();
+        }
+      )
+      .subscribe();
+
+    const salesChannel = supabase
+      .channel('sales-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sales'
+        },
+        () => {
+          fetchAffiliates();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(affiliatesChannel);
+      supabase.removeChannel(salesChannel);
     };
+  }, [fetchAffiliates, fetchGoal]);
 
-    setAffiliates((prev) => {
-      const updated = [...prev, newAffiliate];
-      saveToStorage(updated);
-      return updated;
-    });
+  const addAffiliate = useCallback(async (name: string, initialSales: number = 0) => {
+    const { data, error } = await supabase
+      .from('affiliates')
+      .insert({
+        name,
+        total_sales: initialSales,
+        sales_count: initialSales > 0 ? 1 : 0,
+      })
+      .select()
+      .single();
 
-    return newAffiliate;
+    if (error) {
+      throw error;
+    }
+
+    return data;
   }, []);
 
-  const updateAffiliateSales = useCallback((id: string, amount: number) => {
-    setAffiliates((prev) => {
-      const updated = prev.map((a) =>
-        a.id === id
-          ? { ...a, totalSales: a.totalSales + amount, salesCount: a.salesCount + 1 }
-          : a
-      );
-      saveToStorage(updated);
-      return updated;
-    });
+  const updateAffiliateSales = useCallback(async (id: string, amount: number) => {
+    // First insert the sale
+    const { error: saleError } = await supabase
+      .from('sales')
+      .insert({
+        affiliate_id: id,
+        amount,
+      });
+
+    if (saleError) {
+      throw saleError;
+    }
+
+    // Then update affiliate totals
+    const affiliate = affiliates.find(a => a.id === id);
+    if (affiliate) {
+      const { error } = await supabase
+        .from('affiliates')
+        .update({
+          total_sales: Number(affiliate.total_sales) + amount,
+          sales_count: affiliate.sales_count + 1,
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+    }
+  }, [affiliates]);
+
+  const removeAffiliate = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('affiliates')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
   }, []);
 
-  const removeAffiliate = useCallback((id: string) => {
-    setAffiliates((prev) => {
-      const updated = prev.filter((a) => a.id !== id);
-      saveToStorage(updated);
-      return updated;
-    });
+  const editAffiliate = useCallback(async (id: string, updates: { name?: string; total_sales?: number }) => {
+    const { error } = await supabase
+      .from('affiliates')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
   }, []);
 
-  const editAffiliate = useCallback((id: string, updates: Partial<Pick<Affiliate, 'name' | 'totalSales'>>) => {
-    setAffiliates((prev) => {
-      const updated = prev.map((a) =>
-        a.id === id ? { ...a, ...updates } : a
-      );
-      saveToStorage(updated);
-      return updated;
-    });
+  const updateGoal = useCallback(async (newGoal: number) => {
+    const { error } = await supabase
+      .from('settings')
+      .update({ value: newGoal })
+      .eq('key', 'goal');
+
+    if (error) {
+      throw error;
+    }
+
+    setGoal(newGoal);
   }, []);
 
-  const sortedAffiliates = [...affiliates].sort((a, b) => b.totalSales - a.totalSales);
-  const totalSales = affiliates.reduce((sum, a) => sum + a.totalSales, 0);
+  const totalSales = affiliates.reduce((sum, a) => sum + Number(a.total_sales), 0);
 
   return {
-    affiliates: sortedAffiliates,
+    affiliates,
     totalSales,
+    goal,
+    loading,
     addAffiliate,
     updateAffiliateSales,
     removeAffiliate,
     editAffiliate,
+    updateGoal,
+    refetch: fetchAffiliates,
   };
 }
