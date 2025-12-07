@@ -1,11 +1,6 @@
-export interface Affiliate {
-  id: string;
-  name: string;
-  avatar?: string;
-  totalSales: number;
-  salesCount: number;
-  createdAt: Date;
-}
+import { Tables } from '@/integrations/supabase/types';
+
+export type Affiliate = Tables<'affiliates'>;
 
 export interface TopBenefit {
   position: 1 | 2 | 3;
