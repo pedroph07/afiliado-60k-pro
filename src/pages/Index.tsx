@@ -57,7 +57,7 @@ const Index = () => {
     setShowEditModal(true);
   };
 
-  const handleEditSave = async (id: string, updates: { name?: string; total_sales?: number }) => {
+  const handleEditSave = async (id: string, updates: { name?: string; total_sales?: number; sales_count?: number }) => {
     try {
       await editAffiliate(id, updates);
       toast.success('Afiliado atualizado!');
@@ -65,6 +65,8 @@ const Index = () => {
       toast.error('Erro ao atualizar afiliado');
     }
   };
+
+  const goalReached = totalSales >= goal;
 
   const handleDelete = async (id: string) => {
     const affiliate = affiliates.find(a => a.id === id);
@@ -104,32 +106,33 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-hero">
       <div className="container max-w-6xl py-8 px-4 md:py-12">
         {/* Header */}
-        <header className="text-center mb-10 animate-slide-up">
+        <header className="text-center mb-8 sm:mb-10 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex-1" />
-            <div className="flex items-center gap-3">
-              <Trophy className="w-10 h-10 text-accent glow-gold" />
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Ranking de Afiliados
+            <div className="hidden sm:flex flex-1" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-accent glow-gold" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+                Masternylus
               </h1>
             </div>
-            <div className="flex-1 flex justify-end gap-2">
+            <div className="flex flex-1 justify-end gap-2">
               {isAdmin && (
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setShowGoalModal(true)}
                   title="Editar Meta"
+                  className="h-8 w-8 sm:h-10 sm:w-10"
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
               )}
-              <Button variant="outline" size="icon" onClick={handleSignOut} title="Sair">
+              <Button variant="outline" size="icon" onClick={handleSignOut} title="Sair" className="h-8 w-8 sm:h-10 sm:w-10">
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
-          <p className="text-muted-foreground max-w-md mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto px-4">
             {isAdmin 
               ? 'Gerencie seus afiliados e acompanhe o progresso das vendas!'
               : 'Acompanhe o desempenho dos afiliados e veja quem está mais perto de conquistar os prêmios!'}
@@ -153,20 +156,20 @@ const Index = () => {
               <Trophy className="w-5 h-5 text-accent" />
               <h2 className="text-xl font-semibold text-foreground">Top 3 - Premiação</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {topThree[1] && (
-                <div className="md:order-1 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                  <TopThreeCard affiliate={topThree[1]} position={2} />
+                <div className="order-2 sm:order-1 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                  <TopThreeCard affiliate={topThree[1]} position={2} goalReached={goalReached} />
                 </div>
               )}
               {topThree[0] && (
-                <div className="md:order-2 animate-slide-up">
-                  <TopThreeCard affiliate={topThree[0]} position={1} />
+                <div className="order-1 sm:order-2 animate-slide-up">
+                  <TopThreeCard affiliate={topThree[0]} position={1} goalReached={goalReached} />
                 </div>
               )}
               {topThree[2] && (
-                <div className="md:order-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                  <TopThreeCard affiliate={topThree[2]} position={3} />
+                <div className="order-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                  <TopThreeCard affiliate={topThree[2]} position={3} goalReached={goalReached} />
                 </div>
               )}
             </div>

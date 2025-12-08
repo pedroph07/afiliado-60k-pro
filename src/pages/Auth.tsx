@@ -86,7 +86,7 @@ const Auth = () => {
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-10 h-10 text-accent glow-gold" />
             <h1 className="text-3xl font-bold text-foreground">
-              Ranking de Afiliados
+              Masternylus
             </h1>
           </div>
           <p className="text-muted-foreground">
@@ -174,9 +174,6 @@ const Auth = () => {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          O primeiro usuário a se cadastrar será o administrador.
-        </p>
       </div>
     </div>
   );
