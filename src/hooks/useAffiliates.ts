@@ -133,7 +133,7 @@ export function useAffiliates() {
     }
   }, []);
 
-  const editAffiliate = useCallback(async (id: string, updates: { name?: string; total_sales?: number }) => {
+  const editAffiliate = useCallback(async (id: string, updates: { name?: string; total_sales?: number; sales_count?: number }) => {
     const { error } = await supabase
       .from('affiliates')
       .update(updates)

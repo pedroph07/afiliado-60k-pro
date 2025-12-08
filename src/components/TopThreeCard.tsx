@@ -1,17 +1,17 @@
 import { Affiliate } from '@/types/affiliate';
 import { RankBadge } from './RankBadge';
-import { Crown, Gift, Star, Zap, Trophy } from 'lucide-react';
+import { Crown, Star, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TopThreeCardProps {
   affiliate: Affiliate;
   position: 1 | 2 | 3;
+  goalReached: boolean;
 }
 
-const benefits = {
+const positionConfig = {
   1: {
     title: 'Campeão',
-    items: ['Bônus de R$ 5.000', 'Viagem exclusiva', 'Troféu personalizado'],
     icon: Crown,
     gradient: 'bg-gradient-gold',
     textGradient: 'text-gradient-gold',
@@ -20,7 +20,6 @@ const benefits = {
   },
   2: {
     title: 'Vice-Campeão',
-    items: ['Bônus de R$ 2.500', 'Day Spa Premium', 'Medalha de Prata'],
     icon: Trophy,
     gradient: 'bg-gradient-silver',
     textGradient: 'text-gradient-silver',
@@ -29,7 +28,6 @@ const benefits = {
   },
   3: {
     title: '3º Lugar',
-    items: ['Bônus de R$ 1.000', 'Jantar especial', 'Medalha de Bronze'],
     icon: Star,
     gradient: 'bg-gradient-bronze',
     textGradient: 'text-gradient-bronze',
@@ -38,9 +36,8 @@ const benefits = {
   },
 };
 
-export function TopThreeCard({ affiliate, position }: TopThreeCardProps) {
-  const benefit = benefits[position];
-  const Icon = benefit.icon;
+export function TopThreeCard({ affiliate, position, goalReached }: TopThreeCardProps) {
+  const config = positionConfig[position];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -54,9 +51,9 @@ export function TopThreeCard({ affiliate, position }: TopThreeCardProps) {
   return (
     <div
       className={cn(
-        'relative bg-gradient-card rounded-2xl p-6 border transition-all duration-300 hover:scale-[1.02]',
-        benefit.border,
-        benefit.glow,
+        'relative bg-gradient-card rounded-2xl p-4 sm:p-6 border transition-all duration-300 hover:scale-[1.02]',
+        config.border,
+        config.glow,
         position === 1 && 'lg:-mt-4 lg:scale-105'
       )}
     >
@@ -65,15 +62,15 @@ export function TopThreeCard({ affiliate, position }: TopThreeCardProps) {
       </div>
 
       <div className="pt-8 text-center space-y-4">
-        <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-foreground uppercase">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-muted flex items-center justify-center text-xl sm:text-2xl font-bold text-foreground uppercase">
           {affiliate.name.slice(0, 2)}
         </div>
 
         <div>
-          <h3 className={cn('text-xl font-bold', benefit.textGradient)}>
+          <h3 className={cn('text-lg sm:text-xl font-bold', config.textGradient)}>
             {affiliate.name}
           </h3>
-        <p className="text-2xl font-bold text-foreground mt-1">
+          <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
             {formatCurrency(Number(affiliate.total_sales))}
           </p>
           <p className="text-sm text-muted-foreground">
@@ -81,20 +78,13 @@ export function TopThreeCard({ affiliate, position }: TopThreeCardProps) {
           </p>
         </div>
 
-        <div className="pt-4 border-t border-border/50">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Gift className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">{benefit.title}</span>
+        {goalReached && (
+          <div className="pt-4 border-t border-border/50">
+            <span className={cn('text-sm font-semibold', config.textGradient)}>
+              {config.title}
+            </span>
           </div>
-          <ul className="space-y-2">
-            {benefit.items.map((item, idx) => (
-              <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Zap className="w-3 h-3 text-accent flex-shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
     </div>
   );

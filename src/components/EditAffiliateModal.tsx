@@ -15,17 +15,19 @@ interface EditAffiliateModalProps {
   open: boolean;
   affiliate: Affiliate | null;
   onClose: () => void;
-  onSave: (id: string, updates: { name?: string; total_sales?: number }) => void;
+  onSave: (id: string, updates: { name?: string; total_sales?: number; sales_count?: number }) => void;
 }
 
 export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAffiliateModalProps) {
   const [name, setName] = useState('');
   const [totalSales, setTotalSales] = useState('');
+  const [salesCount, setSalesCount] = useState('');
 
   useEffect(() => {
     if (affiliate) {
       setName(affiliate.name);
       setTotalSales(String(affiliate.total_sales));
+      setSalesCount(String(affiliate.sales_count));
     }
   }, [affiliate]);
 
@@ -35,6 +37,7 @@ export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAff
       onSave(affiliate.id, {
         name: name.trim(),
         total_sales: parseFloat(totalSales) || 0,
+        sales_count: parseInt(salesCount) || 0,
       });
       onClose();
     }
@@ -71,6 +74,20 @@ export function EditAffiliateModal({ open, affiliate, onClose, onSave }: EditAff
               step="0.01"
               value={totalSales}
               onChange={(e) => setTotalSales(e.target.value)}
+              placeholder="0"
+              className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-count" className="text-foreground">Quantidade de Vendas</Label>
+            <Input
+              id="edit-count"
+              type="number"
+              min="0"
+              step="1"
+              value={salesCount}
+              onChange={(e) => setSalesCount(e.target.value)}
               placeholder="0"
               className="bg-input border-border text-foreground placeholder:text-muted-foreground"
             />
